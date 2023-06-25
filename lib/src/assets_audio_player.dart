@@ -666,9 +666,9 @@ class AssetsAudioPlayer {
               case OpenCloseType.open:
                 return await currentAudio.fileSize;
               case OpenCloseType.close:
-              // TODO: Evaluate the need for this. Currently the item is closed when a new item is loaded instead.
-              // This seems to be triggered on seek as well and most of the time you want to use this method to clear up memory,
-              // but not if the data still needs to be accessed.
+                // TODO: Evaluate the need for this. Currently the item is closed when a new item is loaded instead.
+                // This seems to be triggered on seek as well and most of the time you want to use this method to clear up memory,
+                // but not if the data still needs to be accessed.
                 // currentAudio.close();
                 break;
             }
@@ -1185,21 +1185,20 @@ class AssetsAudioPlayer {
     }
   }
 
-  Future<void> _openPlaylist(
-    Playlist playlist, {
-    bool autoStart = _DEFAULT_AUTO_START,
-    double? volume,
-    bool respectSilentMode = _DEFAULT_RESPECT_SILENT_MODE,
-    bool showNotification = _DEFAULT_SHOW_NOTIFICATION,
-    Duration? seek,
-    double? playSpeed,
-    double? pitch,
-    LoopMode? loopMode,
-    NotificationSettings? notificationSettings,
-    PlayInBackground? playInBackground,
-    HeadPhoneStrategy headPhoneStrategy = _DEFAULT_HEADPHONE_STRATEGY,
-    AudioFocusStrategy? audioFocusStrategy,
-  }) async {
+  Future<void> _openPlaylist(Playlist playlist,
+      {bool autoStart = _DEFAULT_AUTO_START,
+      double? volume,
+      bool respectSilentMode = _DEFAULT_RESPECT_SILENT_MODE,
+      bool showNotification = _DEFAULT_SHOW_NOTIFICATION,
+      Duration? seek,
+      double? playSpeed,
+      double? pitch,
+      LoopMode? loopMode,
+      NotificationSettings? notificationSettings,
+      PlayInBackground? playInBackground,
+      HeadPhoneStrategy headPhoneStrategy = _DEFAULT_HEADPHONE_STRATEGY,
+      AudioFocusStrategy? audioFocusStrategy,
+      int startIndex = 0}) async {
     _lastSeek = null;
     _replaceRealtimeSubscription();
     _playlist = _CurrentPlaylist(
@@ -1216,7 +1215,8 @@ class AssetsAudioPlayer {
       headPhoneStrategy: headPhoneStrategy,
     );
     _updatePlaylistIndexes();
-    _playlist!.moveTo(playlist.startIndex);
+    _playlist!.moveTo(startIndex);
+    //_playlist!.moveTo(playlist.startIndex);
 
     playlist.setCurrentlyOpenedIn(_playerEditor);
 
@@ -1255,6 +1255,7 @@ class AssetsAudioPlayer {
     HeadPhoneStrategy headPhoneStrategy = _DEFAULT_HEADPHONE_STRATEGY,
     AudioFocusStrategy? audioFocusStrategy,
     bool forceOpen = false, // skip the _acceptUserOpen
+    int playlistStartIndex = 0,
   }) async {
     final focusStrategy = audioFocusStrategy ?? defaultFocusStrategy;
 
@@ -1276,22 +1277,21 @@ class AssetsAudioPlayer {
       }
 
       if (playlist != null) {
-        await _openPlaylist(
-          playlist,
-          autoStart: autoStart,
-          volume: volume,
-          respectSilentMode: respectSilentMode,
-          showNotification: showNotification,
-          seek: seek,
-          loopMode: loopMode,
-          playSpeed: playSpeed,
-          pitch: pitch,
-          headPhoneStrategy: headPhoneStrategy,
-          audioFocusStrategy: focusStrategy,
-          notificationSettings:
-              notificationSettings ?? defaultNotificationSettings,
-          playInBackground: playInBackground,
-        );
+        await _openPlaylist(playlist,
+            autoStart: autoStart,
+            volume: volume,
+            respectSilentMode: respectSilentMode,
+            showNotification: showNotification,
+            seek: seek,
+            loopMode: loopMode,
+            playSpeed: playSpeed,
+            pitch: pitch,
+            headPhoneStrategy: headPhoneStrategy,
+            audioFocusStrategy: focusStrategy,
+            notificationSettings:
+                notificationSettings ?? defaultNotificationSettings,
+            playInBackground: playInBackground,
+            startIndex: playlistStartIndex);
       }
       _acceptUserOpen = true;
     } catch (t) {
