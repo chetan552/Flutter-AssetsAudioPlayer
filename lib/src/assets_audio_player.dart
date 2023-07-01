@@ -203,6 +203,8 @@ class AssetsAudioPlayer {
 
   bool _acceptUserOpen = true; //if false, user cannot call open method
 
+  bool _playlistAutoPlay = true; //if false, playlist will not continuously play
+
   AssetsAudioPlayer._({this.id = _DEFAULT_PLAYER}) {
     _init();
   }
@@ -951,6 +953,11 @@ class AssetsAudioPlayer {
   }
 
   Future<void> _onFinished(bool? isFinished) async {
+    if (!_playlistAutoPlay) {
+      // stop continuous playing when autoplay is off
+      _playlistFinished.add(true);
+      return;
+    }
     final nextDone = await _next(stopIfLast: false, requestByUser: false);
     if (nextDone) {
       _playlistFinished.add(false); // continue playing the playlist
@@ -1256,6 +1263,7 @@ class AssetsAudioPlayer {
     AudioFocusStrategy? audioFocusStrategy,
     bool forceOpen = false, // skip the _acceptUserOpen
     int playlistStartIndex = 0,
+    bool playlistAutoPlay = true
   }) async {
     final focusStrategy = audioFocusStrategy ?? defaultFocusStrategy;
 
@@ -1277,6 +1285,8 @@ class AssetsAudioPlayer {
       }
 
       if (playlist != null) {
+        _playlistAutoPlay = playlistAutoPlay;
+
         await _openPlaylist(playlist,
             autoStart: autoStart,
             volume: volume,
@@ -1461,6 +1471,10 @@ class AssetsAudioPlayer {
   ///
   Future<void> stop() async {
     return _stop(removeNotification: true);
+  }
+
+  void setPlaylistAutoPlay(bool autoPlay) {
+    _playlistAutoPlay = autoPlay;
   }
 
   Future<void> _stop({bool removeNotification = true}) async {
