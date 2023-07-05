@@ -956,6 +956,7 @@ class AssetsAudioPlayer {
     if (!_playlistAutoPlay) {
       // stop continuous playing when autoplay is off
       _playlistFinished.add(true);
+      await stop();
       return;
     }
     final nextDone = await _next(stopIfLast: false, requestByUser: false);
