@@ -956,6 +956,15 @@ class AssetsAudioPlayer {
     if (!_playlistAutoPlay) {
       // stop continuous playing when autoplay is off
       _playlistFinished.add(true);
+      final curr = _current.valueOrNull;
+      if (curr != null) {
+        _playlistAudioFinished.add(Playing(
+          audio: curr.audio,
+          index: curr.index,
+          hasNext: _playlist!.hasNext(),
+          playlist: _current.value!.playlist,
+        ));
+      }
       await pause();
       await seek(Duration.zero, force: true);
       return;
