@@ -1,8 +1,10 @@
 package com.github.florent37.assets_audio_player.notification
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.PendingIntent
+import android.app.PendingIntent.*
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -23,8 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import android.app.PendingIntent.FLAG_UPDATE_CURRENT
-import android.app.PendingIntent.FLAG_IMMUTABLE
+import androidx.annotation.RequiresApi
+import androidx.core.app.TaskStackBuilder
 
 class NotificationService : Service() {
 
@@ -112,6 +114,7 @@ class NotificationService : Service() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == Intent.ACTION_MEDIA_BUTTON) {
             MediaButtonsReceiver.getMediaSessionCompat(applicationContext).let {
@@ -136,6 +139,7 @@ class NotificationService : Service() {
                 .putExtra(TRACK_ID, audioMetas.trackID)
     }
 
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     private fun displayNotification(action: NotificationAction.Show) {
         GlobalScope.launch(Dispatchers.Main) {
             val image = ImageDownloader.loadBitmap(context = applicationContext, imageMetas = action.audioMetas.image)
@@ -211,6 +215,7 @@ class NotificationService : Service() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     private fun displayNotification(action: NotificationAction.Show, bitmap: Bitmap?) {
         createNotificationChannel()
         val mediaSession = MediaButtonsReceiver.getMediaSessionCompat(applicationContext)
@@ -234,6 +239,19 @@ class NotificationService : Service() {
         MediaButtonReceiver.handleIntent(mediaSession, toggleIntent)
 
         val context = this
+
+        //Trampoline pending intent wont work on version >= 12
+        val resultPendingIntent: PendingIntent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            getActivity(this, 0,
+                    context.packageManager.getLaunchIntentForPackage(context.packageName)!!
+                            .putExtra(NotificationService.EXTRA_PLAYER_ID, action.playerId)
+                            .putExtra(NotificationService.TRACK_ID, action.audioMetas.trackID),
+                    FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+        else
+            getBroadcast(this, 0,
+                createReturnIntent(forAction = NotificationAction.ACTION_SELECT,
+                        forPlayer = action.playerId, audioMetas = action.audioMetas),
+                FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 //prev
@@ -294,8 +312,7 @@ class NotificationService : Service() {
                         it.setSubText(action.audioMetas.album)
                     }
                 }
-                .setContentIntent(PendingIntent.getBroadcast(this, 0,
-                        createReturnIntent(forAction = NotificationAction.ACTION_SELECT, forPlayer = action.playerId, audioMetas = action.audioMetas), FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT))
+                .setContentIntent(resultPendingIntent)
                 .also {
                     if (bitmap != null) {
                         it.setLargeIcon(bitmap)
@@ -307,7 +324,7 @@ class NotificationService : Service() {
 
         //fix for https://github.com/florent37/Flutter-AssetsAudioPlayer/issues/139
         if (!action.isPlaying && Build.VERSION.SDK_INT >= 24) {
-           stopForeground(2)
+           stopForeground(STOP_FOREGROUND_DETACH)
         }
 
     }
@@ -330,12 +347,14 @@ class NotificationService : Service() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     private fun hideNotif() {
         NotificationManagerCompat.from(applicationContext).cancel(NOTIFICATION_ID)
         stopForeground(true)
         stopSelf()
     }
 
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     override fun onTaskRemoved(rootIntent: Intent) {
         hideNotif()
     }
