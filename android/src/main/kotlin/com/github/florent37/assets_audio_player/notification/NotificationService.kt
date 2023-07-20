@@ -1,6 +1,5 @@
 package com.github.florent37.assets_audio_player.notification
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.PendingIntent
@@ -16,6 +15,7 @@ import android.os.IBinder
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.media.session.MediaButtonReceiver
@@ -25,8 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import androidx.annotation.RequiresApi
-import androidx.core.app.TaskStackBuilder
 
 class NotificationService : Service() {
 
@@ -61,7 +59,11 @@ class NotificationService : Service() {
             MediaButtonsReceiver.getMediaSessionCompat(context).let { mediaSession ->
                 val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
                 val newState = PlaybackStateCompat.Builder()
-                        .setActions(ACTION_SEEK_TO)
+                        .setActions(ACTION_SEEK_TO or PlaybackStateCompat.ACTION_PLAY or
+                                PlaybackStateCompat.ACTION_STOP or
+                                PlaybackStateCompat.ACTION_PAUSE or
+                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
                         .setState(state, currentPositionMs, if (isPlaying) speed else 0f)
                         .build()
 
