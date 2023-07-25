@@ -322,7 +322,12 @@ class NotificationService : Service() {
                 }
                 .setShowWhen(false)
                 .build()
-        startForeground(NOTIFICATION_ID, notification)
+
+        try {
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            println("Unable to start foreground: ${e.message}")
+        }
 
         //fix for https://github.com/florent37/Flutter-AssetsAudioPlayer/issues/139
         if (!action.isPlaying && Build.VERSION.SDK_INT >= 24) {
